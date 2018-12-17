@@ -1,0 +1,6 @@
+1 selection des polices dont une présente avec des images réelles
+
+2 construction de bruitage en plus lib de guillaume
+3 cycle gan training
+4 communiquer les résultats
+5 rediger these comment apprendre une distribution
