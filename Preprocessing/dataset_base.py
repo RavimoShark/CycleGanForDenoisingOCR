@@ -11,6 +11,7 @@ from PIL import ImageDraw
 import numpy as np
 import pandas as pd
 import cv2
+from Preprocessing import img_util
 from scipy.ndimage.interpolation import map_coordinates
 from scipy.ndimage.filters import gaussian_filter
 
@@ -75,11 +76,16 @@ def generate_image(base_dimension, font_path, text):
     font = ImageFont.truetype(font_path, base_dimension[1])
     random_factor = random.random() * 0.4 + 0.6
     target_pixel_size = base_dimension[1] * 0.8 * random_factor
+    print(target_pixel_size)
     real_pixel_size = font.getsize(text)[1]
+    print(real_pixel_size)
     new_size = round(base_dimension[1] * (target_pixel_size / real_pixel_size))
+    print(new_size)
     font = ImageFont.truetype(font_path, new_size)
     real_pixel_size = font.getsize(text)
+    print(real_pixel_size)
     margin = (base_dimension[0] - real_pixel_size[0], base_dimension[1] - real_pixel_size[1])
+    print(margin)
     random_positon = (random.randint(0, margin[0]), random.randint(0, margin[1]))
     
     draw = ImageDraw.Draw(image)
@@ -124,7 +130,6 @@ def generate_color_data_point(text, font, color_map):
     target = small_perturbation_color(target, color_map)
     target[target[:, :, 0] == 255] = 0
     input = target.copy()
-    input = 
     input = big_perturbation(target)
     
     weights = get_weights(target)
@@ -152,9 +157,9 @@ def big_perturbation(image_array):
     return image_array
 
 def small_perturbation(image_array):
-    image_array = binarize(image_array)
+    #image_array = binarize(image_array)
     image_array = elastic_transform(image_array, image_array.shape[1] * 0.6, image_array.shape[1] * 0.05, image_array.shape[1] * 0.0)
-    image_array = binarize(image_array)
+    #image_array = binarize(image_array)
     return image_array
 
 def small_perturbation_color(image_array, color_map):
@@ -167,33 +172,33 @@ def resize_perturbation(image_array, min_factor = 0.3):
     factor = random.random() * (1 - min_factor) + min_factor
     new_size = (int(image_array.shape[1] * factor), int(image_array.shape[0] * factor))
     original_size = image_array.shape[:2][::-1]
-    image = get_PIL(image_array).resize(new_size, resample=PIL.Image.BILINEAR)
-    image = get_PIL(binarize(get_np(image)))
-    image_array = get_np(image.resize(original_size, resample=PIL.Image.BILINEAR))
-    image_array = binarize(image_array)
+    image = img_util.get_PIL(image_array).resize(new_size, resample=PIL.Image.BILINEAR)
+    image = img_util.get_PIL(img_util.get_np(image))
+    image_array = img_util.get_np(image.resize(original_size, resample=PIL.Image.BILINEAR))
+    #image_array = binarize(image_array)
     return image_array
 
 
-def permute_perturbation(image_array, proportion = 0.2):
+def permute_perturbation(image_array, proportion = 0.1):
     permutation = ((np.random.random(image_array.shape[:2]) <= proportion) * 255).astype(np.uint8)
     permutation = dilate_perturbation(permutation, 4)[:, :, 0]
     
-    permutation_2 = ((np.random.random(image_array.shape[:2]) <= 0.7) * 255).astype(np.uint8)
+    permutation_2 = ((np.random.random(image_array.shape[:2]) <= 0.9) * 255).astype(np.uint8)
     permutation[permutation_2 == 255] = 0
     
     image_array[permutation == 255, :] = 255 - image_array[permutation == 255, :]
     
     return image_array
 
-def erode_perturbation(image_array, range_max = 5):
-    image_array = get_np(image_array)
+def erode_perturbation(image_array, range_max = 3):
+    image_array = img_util.get_np(image_array)
     erode_value = random.randint(1, range_max)
     if erode_value > 1:
         image_array = erode(image_array, erode_value)
     return image_array
 
-def dilate_perturbation(image_array, range_max = 3):
-    image_array = get_np(image_array)
+def dilate_perturbation(image_array, range_max = 2):
+    image_array = img_util.get_np(image_array)
     erode_value = random.randint(1, range_max)
     if erode_value > 1:
         image_array = dilate(image_array, erode_value)
@@ -254,15 +259,15 @@ def elastic_transform(image_array, alpha, sigma, alpha_affine, random_state=None
     return image_array
 
 def erode(image_array, size):
-    image_array = get_np(image_array)
+    image_array = img_util.get_np(image_array)
     return cv2.erode(image_array, np.ones((size, size)))
 
 def dilate(image_array, size):
-    image_array = get_np(image_array)
+    image_array = img_util.get_np(image_array)
     return cv2.dilate(image_array, np.ones((size, size)))
 
 def median(image_array, size):
-    image_array = get_np(image_array)
+    image_array = img_util.get_np(image_array)
     return cv2.medianBlur(image_array, size)
 
 def diff(first_image, second_image):
